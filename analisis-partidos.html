@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>El Pizarrón — Análisis de partidos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-0:#0B120D; --bg-1:#111A13; --bg-2:#182319; --bg-3:#202F24;
+    --chalk:#F2F0E6; --chalk-dim:#A7B3A6; --chalk-faint:#6E796E;
+    --gold:#D9A441; --gold-dim:#8C6A28; --gold-fill:#2A2110;
+    --win:#6FBE79; --win-fill:#16241A; --loss:#D9714A; --loss-fill:#2A1B12;
+    --line:rgba(242,240,230,0.10); --line-strong:rgba(242,240,230,0.18);
+  }
+  body.light{
+    --bg-0:#F5F3EC; --bg-1:#FFFFFF; --bg-2:#EDEAE0; --bg-3:#E2DECF;
+    --chalk:#161C13; --chalk-dim:#4E5A4B; --chalk-faint:#8C968A;
+    --gold:#A8701C; --gold-dim:#C99A45; --gold-fill:#F3E4C4;
+    --win:#2F7A3B; --win-fill:#DCEEDD; --loss:#B84A2A; --loss-fill:#F5E0D6;
+    --line:rgba(22,28,19,0.10); --line-strong:rgba(22,28,19,0.18);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{background:var(--bg-0);color:var(--chalk);font-family:'Inter',system-ui,-apple-system,sans-serif;min-height:100vh;padding-bottom:3rem;transition:background .15s,color .15s;}
+  .display{font-family:'Barlow Condensed',sans-serif;font-weight:600;letter-spacing:.01em;}
+  header{position:sticky;top:0;z-index:10;background:var(--bg-0);border-bottom:1px solid var(--line);padding:1.1rem 1.1rem 1rem;}
+  .brand{display:flex;align-items:center;gap:.5rem;margin-bottom:.9rem;}
+  .brand-mark{width:9px;height:9px;border-radius:1px;background:var(--gold);transform:rotate(45deg);flex-shrink:0;}
+  .brand h1{font-size:1.35rem;margin:0;color:var(--chalk);}
+  .brand span{color:var(--chalk-faint);font-size:.8rem;font-family:'Inter',sans-serif;}
+  .theme-btn{margin-left:auto;background:var(--bg-2);border:1px solid var(--line-strong);color:var(--chalk-dim);border-radius:20px;width:34px;height:34px;font-size:1rem;cursor:pointer;flex-shrink:0;}
+  .team-row{display:flex;align-items:center;gap:.4rem;}
+  .team-row input{
+    flex:1;min-width:0;background:var(--bg-2);border:1px solid var(--line-strong);border-radius:6px;
+    color:var(--chalk);font-family:'Inter',sans-serif;font-size:.9rem;padding:.7rem .7rem;outline:none;
+  }
+  .team-row input:focus{border-color:var(--gold-dim);}
+  .vs-label{color:var(--chalk-faint);font-size:.78rem;flex-shrink:0;}
+  .search-row{display:flex;gap:.5rem;margin-top:.5rem;}
+  #analyze-btn{background:var(--gold);color:#241B08;border:none;border-radius:6px;padding:0 1.1rem;font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:1rem;letter-spacing:.02em;cursor:pointer;white-space:nowrap;flex:1;}
+  #analyze-btn:active{transform:scale(.97);}
+  #analyze-btn:disabled{opacity:.5;}
+  .suggest-row{margin-top:.45rem;display:flex;flex-wrap:wrap;gap:.4rem;}
+  .suggest-chip{background:var(--gold-fill);color:var(--gold);border:1px solid var(--gold-dim);border-radius:20px;padding:.3rem .65rem;font-size:.74rem;cursor:pointer;}
+
+  .calendar-toggle-btn{margin-top:.65rem;width:100%;background:var(--bg-2);border:1px solid var(--line-strong);color:var(--chalk-dim);border-radius:6px;padding:.6rem;font-family:'Inter',sans-serif;font-size:.83rem;font-weight:500;cursor:pointer;}
+  .calendar-toggle-btn:active{transform:scale(.99);}
+  .calendar-panel{margin-top:.7rem;}
+  .date-nav{display:flex;align-items:center;justify-content:space-between;background:var(--bg-2);border:1px solid var(--line);border-radius:8px;padding:.55rem .6rem;margin-bottom:.6rem;}
+  .date-nav button{background:var(--bg-3);border:none;color:var(--chalk);width:34px;height:34px;border-radius:6px;font-size:1.1rem;cursor:pointer;}
+  .date-nav button:disabled{opacity:.3;}
+  .date-nav .date-label{font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:1.05rem;}
+  .filter-row{display:flex;gap:.4rem;margin-bottom:.6rem;flex-wrap:wrap;}
+  .filter-pill{background:var(--bg-2);border:1px solid var(--line-strong);color:var(--chalk-dim);border-radius:20px;padding:.35rem .8rem;font-size:.78rem;cursor:pointer;}
+  .filter-pill.active{background:var(--gold-fill);border-color:var(--gold-dim);color:var(--gold);}
+  .fav-box{background:var(--bg-1);border:1px solid var(--line);border-radius:8px;padding:.65rem .7rem;margin-bottom:.6rem;}
+  .fav-box-label{font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--chalk-faint);margin-bottom:.45rem;}
+  .fav-input-row{display:flex;gap:.4rem;margin-bottom:.5rem;}
+  .fav-input-row input{flex:1;background:var(--bg-2);border:1px solid var(--line-strong);border-radius:6px;color:var(--chalk);font-size:.82rem;padding:.5rem .6rem;outline:none;}
+  .fav-input-row button{background:var(--bg-3);border:1px solid var(--line-strong);color:var(--gold);border-radius:6px;padding:0 .7rem;font-size:.85rem;cursor:pointer;}
+  .fav-chips{display:flex;flex-wrap:wrap;gap:.4rem;}
+  .fav-chip{background:var(--gold-fill);color:var(--gold);border-radius:20px;padding:.25rem .55rem .25rem .7rem;font-size:.76rem;display:flex;align-items:center;gap:.35rem;}
+  .fav-chip button{background:none;border:none;color:var(--gold);cursor:pointer;font-size:.8rem;padding:0;}
+  .fav-week-btn{width:100%;margin-top:.6rem;background:var(--gold-fill);border:1px solid var(--gold-dim);color:var(--gold);border-radius:6px;padding:.55rem;font-size:.8rem;cursor:pointer;font-family:'Inter',sans-serif;}
+  .fav-week-btn:disabled{opacity:.6;}
+  .batch-item{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);padding:.8rem 1.1rem;font-size:.85rem;}
+  .batch-item:first-child{border-top:none;}
+  .batch-status{color:var(--gold);font-size:.78rem;flex-shrink:0;margin-left:.6rem;text-align:right;}
+  .calendar-refresh{display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem;}
+  .calendar-refresh span{font-size:.72rem;color:var(--chalk-faint);}
+  .calendar-refresh button{background:none;border:none;color:var(--gold);font-size:.78rem;cursor:pointer;padding:.2rem .3rem;}
+  .calendar-item{display:flex;align-items:center;justify-content:space-between;gap:.6rem;background:var(--bg-1);border:1px solid var(--line);border-radius:8px;padding:.7rem .85rem;margin-bottom:.5rem;cursor:pointer;}
+  .calendar-item.is-fav{border-color:var(--gold-dim);}
+  .calendar-item:active{background:var(--bg-2);}
+  .c-league{font-size:.64rem;color:var(--gold);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.2rem;}
+  .c-name{font-size:.88rem;color:var(--chalk);margin-bottom:.15rem;}
+  .c-time{font-size:.72rem;color:var(--chalk-faint);}
+  .c-arrow{color:var(--chalk-faint);font-size:1rem;flex-shrink:0;}
+  .calendar-empty,.calendar-error{font-size:.83rem;color:var(--chalk-faint);padding:.6rem .2rem;}
+
+  main{padding:1.1rem;}
+  .empty-state{text-align:center;padding:3rem 1.2rem;color:var(--chalk-faint);}
+  .empty-state .display{font-size:1.6rem;color:var(--chalk-dim);margin-bottom:.4rem;}
+  .empty-state p{font-size:.88rem;line-height:1.6;max-width:26em;margin:0 auto;}
+  .loading{text-align:center;padding:3rem 1rem;}
+  .loading-bar{width:100%;max-width:220px;height:2px;background:var(--bg-3);margin:0 auto 1rem;overflow:hidden;border-radius:2px;}
+  .loading-bar::after{content:'';display:block;width:40%;height:100%;background:var(--gold);animation:slide 1.1s ease-in-out infinite;}
+  @keyframes slide{0%{transform:translateX(-100%);}100%{transform:translateX(350%);}}
+  .loading p{color:var(--chalk-dim);font-size:.9rem;}
+  .error-box{background:var(--loss-fill);border:1px solid rgba(217,113,74,.35);border-radius:8px;padding:.9rem 1rem;color:var(--loss);font-size:.88rem;line-height:1.5;}
+  .movement-box{background:var(--gold-fill);border:1px solid var(--gold-dim);border-radius:8px;padding:.7rem .85rem;margin-bottom:.7rem;font-size:.82rem;color:var(--gold);line-height:1.5;}
+  .card{background:var(--bg-1);border:1px solid var(--line);border-radius:10px;margin-bottom:.9rem;overflow:hidden;}
+  .scoreboard{padding:1.1rem 1.1rem 1rem;}
+  .scoreboard .matchup-name{font-size:1.5rem;line-height:1.15;margin:0 0 .15rem;}
+  .scoreboard .meta{color:var(--chalk-faint);font-size:.78rem;margin-bottom:.9rem;}
+  .stat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+  .stat{background:var(--bg-2);border-radius:6px;padding:.65rem .7rem;}
+  .stat-label{font-size:.68rem;color:var(--chalk-faint);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.2rem;}
+  .stat-value{font-size:1.05rem;font-family:'Barlow Condensed',sans-serif;font-weight:600;color:var(--chalk);}
+  .stat-value.gold{color:var(--gold);}
+  .badge-row{display:flex;gap:.4rem;margin-top:.7rem;flex-wrap:wrap;}
+  .conf-badge{font-size:.7rem;padding:.25rem .55rem;border-radius:20px;font-weight:500;}
+  .conf-alta{background:var(--win-fill);color:var(--win);}
+  .conf-media{background:var(--gold-fill);color:var(--gold);}
+  .conf-baja{background:var(--loss-fill);color:var(--loss);}
+  .steps{padding:.2rem 0;}
+  .step{border-top:1px solid var(--line);padding:.95rem 1.1rem;}
+  .step:first-child{border-top:none;}
+  .step-head{display:flex;align-items:baseline;gap:.55rem;margin-bottom:.35rem;}
+  .step-num{font-family:'Barlow Condensed',sans-serif;font-weight:600;color:var(--gold-dim);font-size:.85rem;min-width:1.2em;}
+  .step-title{font-size:.98rem;font-weight:500;color:var(--chalk);}
+  .step-content{font-size:.88rem;line-height:1.65;color:var(--chalk-dim);padding-left:1.75rem;}
+  .sources{padding:.9rem 1.1rem;border-top:1px solid var(--line);}
+  .sources-label{font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--chalk-faint);margin-bottom:.5rem;}
+  .source-link{display:block;font-size:.8rem;color:var(--chalk-dim);text-decoration:none;padding:.25rem 0;word-break:break-all;}
+  .source-link:hover{color:var(--gold);}
+  .actions-row{display:flex;gap:.6rem;margin-top:.9rem;flex-wrap:wrap;}
+  .action-btn{flex:1;min-width:110px;background:var(--bg-2);border:1px solid var(--line-strong);color:var(--chalk-dim);border-radius:6px;padding:.6rem;font-family:'Inter',sans-serif;font-size:.82rem;font-weight:500;cursor:pointer;text-align:center;}
+  .action-btn:active{transform:scale(.98);}
+
+  section.history{margin-top:1.6rem;}
+  .history-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:.4rem;flex-wrap:wrap;gap:.4rem;}
+  .history-head h2{font-size:1.05rem;margin:0;color:var(--chalk-dim);font-weight:500;font-family:'Inter',sans-serif;}
+  .accuracy-tag{font-size:.75rem;color:var(--chalk-faint);}
+  .verify-btn{background:none;border:1px solid var(--line-strong);color:var(--gold);border-radius:6px;padding:.3rem .6rem;font-size:.74rem;cursor:pointer;}
+  .history-toolbar{display:flex;gap:.5rem;margin-bottom:.6rem;}
+  .history-toolbar input{flex:1;background:var(--bg-2);border:1px solid var(--line-strong);border-radius:6px;color:var(--chalk);font-size:.82rem;padding:.5rem .6rem;outline:none;}
+  .history-toolbar button{background:var(--bg-2);border:1px solid var(--line-strong);color:var(--chalk-dim);border-radius:6px;padding:0 .7rem;font-size:.78rem;cursor:pointer;white-space:nowrap;}
+  .history-toolbar button.active{background:var(--gold-fill);border-color:var(--gold-dim);color:var(--gold);}
+  .history-item{display:flex;align-items:center;justify-content:space-between;gap:.6rem;background:var(--bg-1);border:1px solid var(--line);border-radius:8px;padding:.75rem .9rem;margin-bottom:.5rem;cursor:pointer;}
+  .history-item.selected{border-color:var(--gold);background:var(--gold-fill);}
+  .history-item:active{background:var(--bg-2);}
+  .history-item-main .h-name{font-size:.9rem;color:var(--chalk);margin-bottom:.15rem;}
+  .history-item-main .h-meta{font-size:.72rem;color:var(--chalk-faint);}
+  .history-item-main .h-note{font-size:.7rem;color:var(--gold);margin-top:.15rem;}
+  .h-result{display:flex;gap:.3rem;align-items:center;flex-shrink:0;}
+  .h-result button{background:var(--bg-2);border:1px solid var(--line-strong);border-radius:5px;width:26px;height:26px;font-size:.8rem;cursor:pointer;color:var(--chalk-faint);}
+  .h-result button.mark-win.active{background:var(--win-fill);color:var(--win);border-color:var(--win);}
+  .h-result button.mark-loss.active{background:var(--loss-fill);color:var(--loss);border-color:var(--loss);}
+  .h-del{background:none;border:none;color:var(--chalk-faint);font-size:1.1rem;padding:.2rem .3rem;cursor:pointer;flex-shrink:0;}
+  .h-del:active{color:var(--loss);}
+  .history-empty{color:var(--chalk-faint);font-size:.85rem;padding:.5rem .2rem;}
+  .compare-bar{display:flex;justify-content:space-between;align-items:center;background:var(--bg-2);border:1px solid var(--line-strong);border-radius:8px;padding:.6rem .8rem;margin-bottom:.6rem;font-size:.8rem;}
+  .compare-bar button{background:var(--gold);color:#241B08;border:none;border-radius:6px;padding:.4rem .7rem;font-size:.78rem;cursor:pointer;}
+  .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:.9rem;}
+  .compare-col{background:var(--bg-1);border:1px solid var(--line);border-radius:8px;padding:.8rem;}
+  .compare-col h3{font-size:.85rem;margin:0 0 .5rem;color:var(--chalk);font-family:'Barlow Condensed',sans-serif;font-weight:600;}
+  .compare-row{font-size:.76rem;color:var(--chalk-dim);margin-bottom:.35rem;}
+  .compare-row b{display:block;font-size:.66rem;text-transform:uppercase;letter-spacing:.03em;color:var(--chalk-faint);}
+  .headline{font-style:italic;color:var(--gold);font-size:.86rem;margin:-.4rem 0 .9rem;line-height:1.4;}
+  .calib-box{background:var(--bg-1);border:1px solid var(--line);border-radius:8px;padding:.6rem .75rem;margin-bottom:.6rem;}
+  .calib-label{font-size:.68rem;text-transform:uppercase;letter-spacing:.04em;color:var(--chalk-faint);margin-bottom:.4rem;}
+  .calib-row{font-size:.78rem;color:var(--chalk-dim);margin-bottom:.2rem;}
+  .calib-row b{color:var(--chalk);margin-right:.4rem;}
+  .app-footer{text-align:center;padding:1.4rem 1.2rem 0;color:var(--chalk-faint);font-size:.68rem;line-height:1.5;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <span class="brand-mark"></span>
+    <h1 class="display">El Pizarrón</h1>
+    <span>análisis de partidos</span>
+    <button class="theme-btn" id="theme-btn" title="Cambiar tema">🌙</button>
+  </div>
+  <div class="team-row">
+    <input id="team-a-input" type="text" placeholder="Equipo A" autocomplete="off" list="team-list">
+    <span class="vs-label">vs</span>
+    <input id="team-b-input" type="text" placeholder="Equipo B" autocomplete="off" list="team-list">
+  </div>
+  <datalist id="team-list"></datalist>
+  <div id="suggest-row" class="suggest-row"></div>
+  <div class="search-row">
+    <button id="analyze-btn" class="display">Analizar</button>
+  </div>
+  <button id="calendar-toggle" class="calendar-toggle-btn">📅 Ver calendario de partidos</button>
+  <div id="calendar-panel" class="calendar-panel" style="display:none;"></div>
+</header>
+
+<main id="main-content">
+  <div class="empty-state" id="empty-state">
+    <div class="display">Escribe un partido para empezar</div>
+    <p>Busca en vivo cuotas, estadísticas y opiniones de analistas, y organiza todo en pasos claros.</p>
+  </div>
+</main>
+
+<footer class="app-footer">Esta app es informativa, no una garantía de resultados. Juega con responsabilidad.</footer>
+
+<script>
+const CLAUDE_MODEL = "claude-sonnet-4-6";
+const HISTORY_KEY = "ga:history";
+const FAV_KEY = "ga:favorites";
+const THEME_KEY = "ga:theme";
+const CAL_PREFIX = "ga:schedule:";
+
+const TEAM_LIST = [
+  "Arizona Cardinals","Atlanta Falcons","Baltimore Ravens","Buffalo Bills","Carolina Panthers","Chicago Bears",
+  "Cincinnati Bengals","Cleveland Browns","Dallas Cowboys","Denver Broncos","Detroit Lions","Green Bay Packers",
+  "Houston Texans","Indianapolis Colts","Jacksonville Jaguars","Kansas City Chiefs","Las Vegas Raiders",
+  "Los Angeles Chargers","Los Angeles Rams","Miami Dolphins","Minnesota Vikings","New England Patriots",
+  "New Orleans Saints","New York Giants","New York Jets","Philadelphia Eagles","Pittsburgh Steelers",
+  "San Francisco 49ers","Seattle Seahawks","Tampa Bay Buccaneers","Tennessee Titans","Washington Commanders",
+  "Alabama Crimson Tide","Georgia Bulldogs","Ohio State Buckeyes","Michigan Wolverines","Texas Longhorns",
+  "Oklahoma Sooners","LSU Tigers","Florida State Seminoles","Florida Gators","Miami Hurricanes","Clemson Tigers",
+  "Notre Dame Fighting Irish","Penn State Nittany Lions","Oregon Ducks","USC Trojans","UCLA Bruins",
+  "Washington Huskies","Wisconsin Badgers","Iowa Hawkeyes","Auburn Tigers","Tennessee Volunteers",
+  "Texas A&M Aggies","Ole Miss Rebels","Mississippi State Bulldogs","Arkansas Razorbacks","Missouri Tigers",
+  "Kentucky Wildcats","South Carolina Gamecocks","Vanderbilt Commodores","SMU Mustangs","TCU Horned Frogs",
+  "Baylor Bears","Texas Tech Red Raiders","Oklahoma State Cowboys","Kansas State Wildcats","Kansas Jayhawks",
+  "Iowa State Cyclones","West Virginia Mountaineers","Cincinnati Bearcats","Houston Cougars","UCF Knights",
+  "BYU Cougars","Arizona Wildcats","Arizona State Sun Devils","Colorado Buffaloes","Utah Utes",
+  "North Carolina Tar Heels","NC State Wolfpack","Duke Blue Devils","Virginia Tech Hokies","Virginia Cavaliers",
+  "Louisville Cardinals","Pittsburgh Panthers","Boston College Eagles","Syracuse Orange","Wake Forest Demon Deacons",
+  "Michigan State Spartans","Nebraska Cornhuskers","Minnesota Golden Gophers","Illinois Fighting Illini",
+  "Indiana Hoosiers","Purdue Boilermakers","Rutgers Scarlet Knights","Maryland Terrapins","Northwestern Wildcats",
+  "Stanford Cardinal","California Golden Bears","Oregon State Beavers","Washington State Cougars",
+  "San Diego State Aztecs","Boise State Broncos","Memphis Tigers","Tulane Green Wave","Navy Midshipmen",
+  "Army Black Knights","Air Force Falcons","App State Mountaineers","James Madison Dukes",
+  "Georgia Tech Yellow Jackets","New Mexico State Aggies"
+];
+
+const $ = (sel) => document.querySelector(sel);
+const teamAInput = $("#team-a-input");
+const teamBInput = $("#team-b-input");
+const btn = $("#analyze-btn");
+const mainContent = $("#main-content");
+
+let history = [];
+let favorites = [];
+let calendarOpen = false;
+let selectedDate = new Date();
+let leagueFilter = "Todos";
+let currentPartidos = [];
+let historySearch = "";
+let compareMode = false;
+let compareSelection = [];
+let resultFilter = "Todos";
+
+function escapeHtml(str){
+  if(str === undefined || str === null) return "";
+  return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+function normalize(s){ return (s||"").toLowerCase().replace(/[^a-z0-9]/g,""); }
+
+/* ---------- TEAM AUTOCOMPLETE / SUGGESTIONS ---------- */
+function populateTeamList(){
+  const dl = $("#team-list");
+  dl.innerHTML = TEAM_LIST.map(t => `<option value="${escapeHtml(t)}">`).join("");
+}
+function findClosestTeam(query){
+  if(!query) return null;
+  const q = query.toLowerCase().trim();
+  if(TEAM_LIST.some(t => t.toLowerCase() === q)) return null;
+  let match = TEAM_LIST.find(t => t.toLowerCase().includes(q) || q.includes(t.toLowerCase()));
+  if(match) return match;
+  const qWords = q.split(/\s+/);
+  match = TEAM_LIST.find(t => qWords.some(w => w.length > 2 && t.toLowerCase().includes(w)));
+  return match || null;
+}
+function renderSuggestions(){
+  const row = $("#suggest-row");
+  const chips = [];
+  const a = teamAInput.value.trim();
+  const b = teamBInput.value.trim();
+  if(a){
+    const sug = findClosestTeam(a);
+    if(sug) chips.push({field:"a", team:sug});
+  }
+  if(b){
+    const sug = findClosestTeam(b);
+    if(sug) chips.push({field:"b", team:sug});
+  }
+  if(chips.length === 0){ row.innerHTML = ""; return; }
+  row.innerHTML = chips.map(c => `<span class="suggest-chip" data-field="${c.field}" data-team="${escapeHtml(c.team)}">¿Quisiste decir: ${escapeHtml(c.team)}?</span>`).join("");
+  row.querySelectorAll(".suggest-chip").forEach(el => {
+    el.addEventListener("click", () => {
+      const field = el.getAttribute("data-field");
+      const team = el.getAttribute("data-team");
+      if(field === "a") teamAInput.value = team; else teamBInput.value = team;
+      row.innerHTML = "";
+    });
+  });
+}
+teamAInput.addEventListener("blur", renderSuggestions);
+teamBInput.addEventListener("blur", renderSuggestions);
+
+/* ---------- THEME ---------- */
+async function initTheme(){
+  try{
+    const res = await window.storage.get(THEME_KEY, false);
+    if(res && res.value === "light"){
+      document.body.classList.add("light");
+      $("#theme-btn").textContent = "☀️";
+    }
+  }catch(e){}
+}
+$("#theme-btn").addEventListener("click", async () => {
+  const isLight = document.body.classList.toggle("light");
+  $("#theme-btn").textContent = isLight ? "☀️" : "🌙";
+  try{ await window.storage.set(THEME_KEY, isLight ? "light" : "dark", false); }catch(e){}
+});
+
+/* ---------- FAVORITES ---------- */
+async function loadFavorites(){
+  try{
+    const res = await window.storage.get(FAV_KEY, false);
+    favorites = res ? JSON.parse(res.value) : [];
+  }catch(e){ favorites = []; }
+}
+async function saveFavorites(){
+  try{ await window.storage.set(FAV_KEY, JSON.stringify(favorites), false); }catch(e){}
+}
+function renderFavBox(){
+  const chips = favorites.map(f => `<span class="fav-chip">★ ${escapeHtml(f)} <button data-fav="${escapeHtml(f)}">✕</button></span>`).join("");
+  return `
+    <div class="fav-box">
+      <div class="fav-box-label">Equipos favoritos</div>
+      <div class="fav-input-row">
+        <input id="fav-input" type="text" placeholder="Nombre del equipo" list="team-list">
+        <button id="fav-add">★ Agregar</button>
+      </div>
+      <div class="fav-chips">${chips || '<span style="font-size:.78rem;color:var(--chalk-faint);">Ninguno todavía</span>'}</div>
+      ${favorites.length > 0 ? `<button id="analyze-fav-week" class="fav-week-btn">⭐ Analizar partidos de mis favoritos esta semana</button>` : ""}
+    </div>
+  `;
+}
+function bindFavBox(){
+  const addBtn = $("#fav-add");
+  if(addBtn){
+    addBtn.addEventListener("click", async () => {
+      const val = $("#fav-input").value.trim();
+      if(!val) return;
+      if(!favorites.some(f => f.toLowerCase() === val.toLowerCase())){
+        favorites.push(val);
+        await saveFavorites();
+      }
+      renderCalendarPanel();
+    });
+  }
+  document.querySelectorAll("[data-fav]").forEach(elm => {
+    elm.addEventListener("click", async () => {
+      favorites = favorites.filter(f => f !== elm.getAttribute("data-fav"));
+      await saveFavorites();
+      renderCalendarPanel();
+    });
+  });
+  const favWeekBtn = $("#analyze-fav-week");
+  if(favWeekBtn) favWeekBtn.addEventListener("click", analyzeFavoritesWeek);
+}
+
+async function analyzeFavoritesWeek(){
+  const favBtn = $("#analyze-fav-week");
+  if(favBtn){ favBtn.disabled = true; favBtn.textContent = "Buscando partidos de tus favoritos…"; }
+  let matches = [];
+  try{
+    for(let i=0;i<=6;i++){
+      const d = new Date(); d.setDate(d.getDate()+i);
+      const partidos = await fetchScheduleForDate(d, false);
+      partidos.forEach(p => {
+        const isFav = favorites.some(f => (p.partido||"").toLowerCase().includes(f.toLowerCase()));
+        if(isFav && !matches.some(m => m.partido === p.partido)) matches.push(p);
+      });
+    }
+  }catch(e){}
+  if(matches.length === 0){
+    if(favBtn){ favBtn.disabled = false; favBtn.textContent = "⭐ Analizar partidos de mis favoritos esta semana"; }
+    $("#cal-list-area").insertAdjacentHTML("afterbegin", `<div class="calendar-empty">No se encontraron partidos de tus favoritos esta semana.</div>`);
+    return;
+  }
+  calendarOpen = false;
+  $("#calendar-panel").style.display = "none";
+  renderBatchProgress(matches);
+  for(const m of matches){
+    updateBatchProgress(m.partido, "analizando");
+    try{
+      const data = await analyze(m.partido);
+      const entry = {
+        id: Date.now().toString(36)+Math.random().toString(36).slice(2,6), partido: data.partido, fecha: data.fecha || "",
+        titular: data.titular || "", resumen: data.resumen || {}, pasos: data.pasos || [], fuentes: data.fuentes || [],
+        resultado: null, marcador_final: null, nota_resultado: null, savedAt: new Date().toISOString()
+      };
+      history.unshift(entry);
+      await saveHistory();
+      updateBatchProgress(m.partido, "listo", data.resumen && data.resumen.pick);
+    }catch(err){
+      updateBatchProgress(m.partido, "error");
+    }
+  }
+  renderHistorySection();
+}
+
+function renderBatchProgress(matches){
+  const rows = matches.map(m => `
+    <div class="batch-item" data-key="${escapeHtml(m.partido)}">
+      <div class="batch-name">${escapeHtml(m.partido)}</div>
+      <div class="batch-status" id="batch-status-${escapeHtml(normalize(m.partido))}">En cola…</div>
+    </div>
+  `).join("");
+  mainContent.innerHTML = `
+    <div class="card">
+      <div class="scoreboard">
+        <div class="matchup-name display">Analizando favoritos</div>
+        <div class="meta">Se guardan automáticamente en tu historial</div>
+      </div>
+      <div class="steps">${rows}</div>
+    </div>
+  `;
+  renderHistorySection();
+}
+function updateBatchProgress(partido, status, pick){
+  const el = document.getElementById("batch-status-" + normalize(partido));
+  if(!el) return;
+  if(status === "analizando") el.textContent = "Analizando…";
+  else if(status === "listo") el.textContent = `Listo — ${pick || "guardado"}`;
+  else if(status === "error") el.textContent = "No se pudo analizar";
+}
+
+/* ---------- DATE HELPERS ---------- */
+function dateKey(d){ return d.toISOString().slice(0,10); }
+function formatDateLabel(d){ return d.toLocaleDateString('es', {weekday:'short', day:'numeric', month:'short'}); }
+function minDate(){ const d = new Date(); d.setDate(d.getDate()-1); return d; }
+function maxDate(){ const d = new Date(); d.setDate(d.getDate()+6); return d; }
+
+/* ---------- CALENDAR ---------- */
+function renderCalendarPanel(){
+  const panel = $("#calendar-panel");
+  const atMin = dateKey(selectedDate) <= dateKey(minDate());
+  const atMax = dateKey(selectedDate) >= dateKey(maxDate());
+  panel.innerHTML = `
+    <div class="date-nav">
+      <button id="date-prev" ${atMin ? "disabled" : ""}>‹</button>
+      <span class="date-label">${escapeHtml(formatDateLabel(selectedDate))}</span>
+      <button id="date-next" ${atMax ? "disabled" : ""}>›</button>
+    </div>
+    <div class="filter-row">${["Todos","NFL","NCAA"].map(l => `<button class="filter-pill ${leagueFilter===l?"active":""}" data-league="${l}">${l}</button>`).join("")}</div>
+    ${renderFavBox()}
+    <div id="cal-list-area"></div>
+  `;
+  $("#date-prev").addEventListener("click", () => changeDate(-1));
+  $("#date-next").addEventListener("click", () => changeDate(1));
+  document.querySelectorAll("[data-league]").forEach(elm => {
+    elm.addEventListener("click", () => { leagueFilter = elm.getAttribute("data-league"); renderCalendarPanel(); });
+  });
+  bindFavBox();
+  loadScheduleForSelectedDate(false);
+}
+async function changeDate(delta){
+  const d = new Date(selectedDate);
+  d.setDate(d.getDate()+delta);
+  if(dateKey(d) < dateKey(minDate()) || dateKey(d) > dateKey(maxDate())) return;
+  selectedDate = d;
+  renderCalendarPanel();
+}
+async function fetchScheduleForDate(date, force){
+  const key = CAL_PREFIX + dateKey(date);
+  if(!force){
+    try{
+      const cached = await window.storage.get(key, false);
+      if(cached) return JSON.parse(cached.value);
+    }catch(e){}
+  }
+  const dayLabel = formatDateLabel(date);
+  const systemPrompt = `Busca en la web los partidos de fútbol americano (NFL y NCAA top 25) para el día: ${dayLabel} (${dateKey(date)}). Responde ÚNICAMENTE con JSON válido, sin texto adicional:
+{"partidos":[{"partido":"Equipo A vs Equipo B","liga":"NFL o NCAA","fecha":"hora corta"}]}
+Máximo 10 partidos, ordenados por hora. Muy breve. Español. Si no hay, {"partidos":[]}.`;
+  const parsed = await callClaudeJSON(systemPrompt, `Partidos del ${dayLabel}.`, 1000);
+  const partidos = parsed.partidos || [];
+  try{ await window.storage.set(key, JSON.stringify(partidos), false); }catch(e){}
+  return partidos;
+}
+async function loadScheduleForSelectedDate(force){
+  const area = $("#cal-list-area");
+  area.innerHTML = `<div class="loading" style="padding:1.2rem .5rem;"><div class="loading-bar"></div><p style="font-size:.83rem;">Buscando partidos…</p></div>`;
+  try{
+    currentPartidos = await fetchScheduleForDate(selectedDate, force);
+    renderCalendarList(currentPartidos);
+  }catch(err){
+    area.innerHTML = `<div class="calendar-error">No se pudo cargar el calendario. ${escapeHtml(err.message || "")}</div>`;
+  }
+}
+function splitMatchup(str){
+  const parts = str.split(/\s+vs\.?\s+|\s+@\s+/i);
+  if(parts.length === 2) return {a: parts[0].trim(), b: parts[1].trim()};
+  return {a: str.trim(), b: ""};
+}
+function renderCalendarList(partidos){
+  const area = $("#cal-list-area");
+  if(!area) return;
+  let list = Array.isArray(partidos) ? partidos.slice() : [];
+  if(leagueFilter !== "Todos") list = list.filter(p => (p.liga || "").toUpperCase().includes(leagueFilter));
+  const isFav = (p) => favorites.some(f => (p.partido || "").toLowerCase().includes(f.toLowerCase()));
+  list.sort((a,b) => (isFav(b)?1:0) - (isFav(a)?1:0));
+  if(list.length === 0){ area.innerHTML = `<div class="calendar-empty">No se encontraron partidos para este día con ese filtro.</div>`; return; }
+  const items = list.map(p => `
+    <div class="calendar-item ${isFav(p) ? "is-fav" : ""}" data-matchup="${escapeHtml(p.partido)}">
+      <div>
+        <div class="c-league">${isFav(p) ? "★ " : ""}${escapeHtml(p.liga || "")}</div>
+        <div class="c-name">${escapeHtml(p.partido)}</div>
+        <div class="c-time">${escapeHtml(p.fecha || "")}</div>
+      </div>
+      <div class="c-arrow">›</div>
+    </div>
+  `).join("");
+  area.innerHTML = `<div class="calendar-refresh"><span>Toca un partido para analizarlo</span><button id="refresh-cal">Actualizar</button></div>${items}`;
+  $("#refresh-cal").addEventListener("click", () => loadScheduleForSelectedDate(true));
+  area.querySelectorAll(".calendar-item").forEach(el => {
+    el.addEventListener("click", () => {
+      const {a,b} = splitMatchup(el.getAttribute("data-matchup"));
+      teamAInput.value = a; teamBInput.value = b;
+      calendarOpen = false;
+      $("#calendar-panel").style.display = "none";
+      handleAnalyze();
+    });
+  });
+}
+$("#calendar-toggle").addEventListener("click", () => {
+  calendarOpen = !calendarOpen;
+  const panel = $("#calendar-panel");
+  panel.style.display = calendarOpen ? "block" : "none";
+  if(calendarOpen) renderCalendarPanel();
+});
+
+/* ---------- JSON REPAIR ---------- */
+function repairJson(str){
+  let stack = [], inString=false, escape=false;
+  for(let i=0;i<str.length;i++){
+    const ch = str[i];
+    if(inString){
+      if(escape) escape=false;
+      else if(ch === '\\') escape=true;
+      else if(ch === '"') inString=false;
+    } else {
+      if(ch === '"') inString=true;
+      else if(ch === '{' || ch === '[') stack.push(ch);
+      else if(ch === '}'){ if(stack[stack.length-1]==='{') stack.pop(); }
+      else if(ch === ']'){ if(stack[stack.length-1]==='[') stack.pop(); }
+    }
+  }
+  let repaired = str;
+  if(inString) repaired += '"';
+  repaired = repaired.replace(/,\s*$/, '');
+  while(stack.length){ const open = stack.pop(); repaired += open === '{' ? '}' : ']'; }
+  return repaired;
+}
+function extractJson(text){
+  let cleaned = text.trim().replace(/^```json/i,"").replace(/^```/,"").replace(/```$/,"").trim();
+  const start = cleaned.indexOf("{");
+  if(start === -1) throw new Error("Respuesta sin formato JSON");
+  const jsonStr = cleaned.slice(start);
+  try{ return JSON.parse(jsonStr); }
+  catch(e){
+    try{ return JSON.parse(repairJson(jsonStr)); }
+    catch(e2){ throw new Error("La respuesta llegó incompleta. Intenta de nuevo."); }
+  }
+}
+
+/* ---------- SHARED CLAUDE CALL (with one automatic retry) ---------- */
+async function callClaudeOnce(systemPrompt, userContent, maxTokens){
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({
+      model: CLAUDE_MODEL, max_tokens: maxTokens, system: systemPrompt,
+      messages:[{role:"user", content:userContent}],
+      tools:[{type:"web_search_20250305", name:"web_search"}]
+    })
+  });
+  if(!response.ok) throw new Error(`Error del servidor (${response.status})`);
+  const data = await response.json();
+  const textBlocks = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("\n");
+  if(!textBlocks.trim()) throw new Error("El modelo no devolvió una respuesta de texto.");
+  return extractJson(textBlocks);
+}
+async function callClaudeJSON(systemPrompt, userContent, maxTokens){
+  try{
+    return await callClaudeOnce(systemPrompt, userContent, maxTokens);
+  }catch(e){
+    return await callClaudeOnce(systemPrompt, userContent, maxTokens);
+  }
+}
+
+/* ---------- RENDER STATES ---------- */
+function renderEmpty(){
+  mainContent.innerHTML = '<div class="empty-state" id="empty-state"><div class="display">Escribe un partido para empezar</div><p>Busca en vivo cuotas, estadísticas y opiniones de analistas, y organiza todo en pasos claros.</p></div>';
+  renderHistorySection();
+}
+function renderLoading(){
+  mainContent.innerHTML = `<div class="loading"><div class="loading-bar"></div><p>Buscando cuotas, stats y opiniones de analistas…</p></div>`;
+}
+function renderError(msg){
+  mainContent.innerHTML = `<div class="error-box">No se pudo completar el análisis. ${escapeHtml(msg)}</div>`;
+  renderHistorySection();
+}
+function confBadge(label, val){
+  const v = (val || "").toLowerCase();
+  const cls = v.includes("alta") ? "conf-alta" : v.includes("media") ? "conf-media" : v.includes("baja") ? "conf-baja" : "conf-media";
+  if(!val) return "";
+  return `<span class="conf-badge ${cls}">${escapeHtml(label)}: ${escapeHtml(val)}</span>`;
+}
+function stepsHtml(pasos){
+  if(!Array.isArray(pasos)) return "";
+  return pasos.map((p,i) => `
+    <div class="step"><div class="step-head"><span class="step-num">${i+1}</span><span class="step-title">${escapeHtml(p.titulo)}</span></div>
+    <div class="step-content">${escapeHtml(p.contenido)}</div></div>
+  `).join("");
+}
+function sourcesHtml(fuentes){
+  if(!Array.isArray(fuentes) || fuentes.length === 0) return "";
+  const links = fuentes.slice(0,6).map(u => `<a class="source-link" href="${escapeHtml(u)}" target="_blank" rel="noopener">${escapeHtml(u)}</a>`).join("");
+  return `<div class="sources"><div class="sources-label">Fuentes</div>${links}</div>`;
+}
+function movementHtml(data){
+  const prior = history.find(h => normalize(h.partido) === normalize(data.partido));
+  if(!prior) return "";
+  const r = data.resumen || {}; const pr = prior.resumen || {};
+  const diffs = [];
+  if(pr.spread && r.spread && pr.spread !== r.spread) diffs.push(`spread de ${pr.spread} a ${r.spread}`);
+  if(pr.total && r.total && pr.total !== r.total) diffs.push(`total de ${pr.total} a ${r.total}`);
+  if(pr.pick && r.pick && pr.pick !== r.pick) diffs.push(`pick cambió de "${pr.pick}" a "${r.pick}"`);
+  if(diffs.length === 0){
+    return `<div class="movement-box">Ya habías analizado este partido — la línea se mantiene igual: ${escapeHtml(r.pick||"")}.</div>`;
+  }
+  return `<div class="movement-box">Movimiento desde tu último análisis guardado: ${escapeHtml(diffs.join("; "))}.</div>`;
+}
+
+function renderResult(data, opts){
+  opts = opts || {};
+  const r = data.resumen || {};
+  mainContent.innerHTML = `
+    ${!opts.saved ? movementHtml(data) : ""}
+    <div class="card">
+      <div class="scoreboard">
+        <div class="matchup-name display">${escapeHtml(data.partido)}</div>
+        <div class="meta">${escapeHtml(data.fecha || "")}${r.clima ? " · " + escapeHtml(r.clima) : ""}</div>
+        ${data.titular ? `<div class="headline">"${escapeHtml(data.titular)}"</div>` : ""}
+        <div class="stat-grid">
+          <div class="stat" style="grid-column:1/-1;"><div class="stat-label">Pick</div><div class="stat-value gold">${escapeHtml(r.pick || "—")}</div></div>
+          <div class="stat"><div class="stat-label">Spread</div><div class="stat-value">${escapeHtml(r.spread || "—")}</div></div>
+          <div class="stat"><div class="stat-label">Total</div><div class="stat-value">${escapeHtml(r.total || "—")}</div></div>
+          <div class="stat" style="grid-column:1/-1;"><div class="stat-label">Favorito</div><div class="stat-value">${escapeHtml(r.favorito || "—")}</div></div>
+        </div>
+        <div class="badge-row">${confBadge("Spread", r.confianza_spread)}${confBadge("Total", r.confianza_total)}</div>
+      </div>
+      <div class="steps">${stepsHtml(data.pasos)}</div>
+      ${sourcesHtml(data.fuentes)}
+    </div>
+    <div class="actions-row">
+      <button class="action-btn" id="save-btn">${opts.saved ? "Guardado ✓" : "Guardar en historial"}</button>
+      <button class="action-btn" id="share-btn">Compartir</button>
+      <button class="action-btn" id="new-btn">Nuevo análisis</button>
+    </div>
+  `;
+  const saveBtn = $("#save-btn");
+  if(saveBtn && !opts.saved){
+    saveBtn.addEventListener("click", async () => {
+      const entry = {
+        id: Date.now().toString(36), partido: data.partido, fecha: data.fecha || "", titular: data.titular || "",
+        resumen: r, pasos: data.pasos || [], fuentes: data.fuentes || [],
+        resultado: null, marcador_final: null, nota_resultado: null, savedAt: new Date().toISOString()
+      };
+      history.unshift(entry);
+      await saveHistory();
+      saveBtn.textContent = "Guardado ✓";
+      renderHistorySection();
+    });
+  }
+  $("#share-btn").addEventListener("click", async () => {
+    const text = `${data.partido}\nPick: ${r.pick || "—"} | Spread: ${r.spread || "—"} | Total: ${r.total || "—"}\n\n${(data.pasos||[]).map(p=>`${p.titulo}: ${p.contenido}`).join("\n")}`;
+    if(navigator.share){ try{ await navigator.share({title: data.partido, text}); }catch(e){} }
+    else { try{ await navigator.clipboard.writeText(text); $("#share-btn").textContent = "Copiado ✓"; setTimeout(()=>{$("#share-btn").textContent="Compartir";},1500); }catch(e){} }
+  });
+  $("#new-btn").addEventListener("click", () => { teamAInput.value=""; teamBInput.value=""; renderEmpty(); teamAInput.focus(); });
+  renderHistorySection();
+}
+
+/* ---------- HISTORY ---------- */
+async function loadHistory(){
+  try{ const res = await window.storage.get(HISTORY_KEY, false); history = res ? JSON.parse(res.value) : []; }
+  catch(e){ history = []; }
+}
+async function saveHistory(){
+  try{ await window.storage.set(HISTORY_KEY, JSON.stringify(history), false); }catch(e){}
+}
+
+function renderHistorySection(){
+  const existing = document.querySelector("section.history");
+  if(existing) existing.remove();
+  const section = document.createElement("section");
+  section.className = "history";
+
+  const withResult = history.filter(h => h.resultado === "acierto" || h.resultado === "fallo");
+  const aciertos = withResult.filter(h => h.resultado === "acierto").length;
+  const accuracyText = withResult.length ? `Precisión: ${Math.round(aciertos/withResult.length*100)}% (${withResult.length})` : "";
+  const pendingCount = history.filter(h => !h.resultado).length;
+
+  let list = history.filter(h => (h.partido || "").toLowerCase().includes(historySearch.toLowerCase()));
+  if(resultFilter === "Acertados") list = list.filter(h => h.resultado === "acierto");
+  else if(resultFilter === "Fallados") list = list.filter(h => h.resultado === "fallo");
+  else if(resultFilter === "Pendientes") list = list.filter(h => !h.resultado);
+  const items = list.length ? list.map(h => `
+    <div class="history-item ${compareSelection.includes(h.id) ? "selected" : ""}" data-id="${h.id}">
+      <div class="history-item-main">
+        <div class="h-name">${escapeHtml(h.partido)}</div>
+        <div class="h-meta">${escapeHtml(h.fecha || "")}${h.resumen && h.resumen.pick ? " · " + escapeHtml(h.resumen.pick) : ""}</div>
+        ${h.nota_resultado ? `<div class="h-note">${escapeHtml(h.marcador_final ? h.marcador_final + " — " : "")}${escapeHtml(h.nota_resultado)}</div>` : ""}
+      </div>
+      <div class="h-result">
+        <button class="mark-win ${h.resultado==='acierto'?'active':''}" data-id="${h.id}" data-mark="acierto" title="Acertó">✓</button>
+        <button class="mark-loss ${h.resultado==='fallo'?'active':''}" data-id="${h.id}" data-mark="fallo" title="Falló">✗</button>
+        <button class="h-del" data-id="${h.id}" data-mark="del" title="Eliminar">✕</button>
+      </div>
+    </div>
+  `).join("") : '<div class="history-empty">Todavía no has guardado ningún análisis.</div>';
+
+  section.innerHTML = `
+    <div class="history-head">
+      <h2>Historial</h2>
+      <span class="accuracy-tag">${accuracyText}</span>
+    </div>
+    <div class="history-toolbar">
+      <input id="history-search" type="text" placeholder="Buscar equipo…" value="${escapeHtml(historySearch)}">
+      <button id="compare-toggle" class="${compareMode?'active':''}">Comparar</button>
+      <button id="export-btn">Exportar</button>
+      ${pendingCount > 0 ? `<button id="verify-btn" class="verify-btn">Verificar resultados</button>` : ""}
+    </div>
+    <div class="filter-row">
+      ${["Todos","Acertados","Fallados","Pendientes"].map(f => `<button class="filter-pill ${resultFilter===f?"active":""}" data-resfilter="${f}">${f}</button>`).join("")}
+    </div>
+    ${calibrationHtml()}
+    ${compareMode ? `<div class="compare-bar"><span>${compareSelection.length}/2 seleccionados</span>${compareSelection.length===2 ? '<button id="do-compare">Ver comparación</button>' : ''}</div>` : ''}
+    <div id="compare-output"></div>
+    ${items}
+  `;
+  mainContent.appendChild(section);
+
+  $("#history-search").addEventListener("input", (e) => { historySearch = e.target.value; renderHistorySection(); });
+  $("#compare-toggle").addEventListener("click", () => { compareMode = !compareMode; compareSelection = []; renderHistorySection(); });
+  $("#export-btn").addEventListener("click", exportHistoryCSV);
+  document.querySelectorAll("[data-resfilter]").forEach(elm => {
+    elm.addEventListener("click", () => { resultFilter = elm.getAttribute("data-resfilter"); renderHistorySection(); });
+  });
+  const doCompareBtn = $("#do-compare");
+  if(doCompareBtn) doCompareBtn.addEventListener("click", renderCompareOutput);
+  const verifyBtn = $("#verify-btn");
+  if(verifyBtn) verifyBtn.addEventListener("click", () => verifyPendingResults(true));
+
+  section.querySelectorAll(".history-item").forEach(el => {
+    el.addEventListener("click", (e) => {
+      const id = el.getAttribute("data-id");
+      if(e.target.closest(".h-result")) return;
+      if(compareMode){
+        if(compareSelection.includes(id)) compareSelection = compareSelection.filter(x => x !== id);
+        else if(compareSelection.length < 2) compareSelection.push(id);
+        renderHistorySection();
+        return;
+      }
+      const entry = history.find(h => h.id === id);
+      if(entry) renderResult(entry, {saved:true});
+    });
+  });
+  section.querySelectorAll("[data-mark]").forEach(elm => {
+    elm.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const id = elm.getAttribute("data-id");
+      const mark = elm.getAttribute("data-mark");
+      if(mark === "del"){ history = history.filter(h => h.id !== id); }
+      else {
+        const entry = history.find(h => h.id === id);
+        if(entry){ entry.resultado = entry.resultado === mark ? null : mark; }
+      }
+      await saveHistory();
+      renderHistorySection();
+    });
+  });
+}
+
+function calibrationHtml(){
+  const marked = history.filter(h => h.resultado === "acierto" || h.resultado === "fallo");
+  if(marked.length < 2) return "";
+  function groupBy(field){
+    const groups = {Alta:[],Media:[],Baja:[]};
+    marked.forEach(h => {
+      const level = (h.resumen && h.resumen[field]) || "";
+      const key = ["Alta","Media","Baja"].find(k => level.toLowerCase().includes(k.toLowerCase()));
+      if(key) groups[key].push(h.resultado === "acierto");
+    });
+    return groups;
+  }
+  const row = (label, groups) => {
+    const parts = ["Alta","Media","Baja"].map(k => {
+      const arr = groups[k];
+      if(!arr.length) return null;
+      const pct = Math.round(arr.filter(Boolean).length/arr.length*100);
+      return `${k} ${pct}% (${arr.length})`;
+    }).filter(Boolean).join(" · ");
+    return parts ? `<div class="calib-row"><b>${label}</b>${parts}</div>` : "";
+  };
+  const spreadRow = row("Spread", groupBy("confianza_spread"));
+  const totalRow = row("Total", groupBy("confianza_total"));
+  if(!spreadRow && !totalRow) return "";
+  return `<div class="calib-box"><div class="calib-label">Precisión real según tu nivel de confianza marcado</div>${spreadRow}${totalRow}</div>`;
+}
+
+function exportHistoryCSV(){
+  if(history.length === 0) return;
+  const header = ["Partido","Fecha","Titular","Pick","Spread","Total","Resultado","Marcador final","Guardado"];
+  const rows = history.map(h => [
+    h.partido, h.fecha, h.titular || "", (h.resumen&&h.resumen.pick)||"", (h.resumen&&h.resumen.spread)||"",
+    (h.resumen&&h.resumen.total)||"", h.resultado||"", h.marcador_final||"", (h.savedAt||"").slice(0,16).replace("T"," ")
+  ]);
+  const csvEscape = (v) => `"${String(v||"").replace(/"/g,'""')}"`;
+  const csv = [header, ...rows].map(r => r.map(csvEscape).join(",")).join("\n");
+  const blob = new Blob(["\uFEFF" + csv], {type:"text/csv;charset=utf-8;"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = "cuarto-y-diez-historial.csv";
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function renderCompareOutput(){
+  const out = $("#compare-output");
+  const [a,b] = compareSelection.map(id => history.find(h => h.id === id));
+  if(!a || !b) return;
+  const col = (h) => `
+    <div class="compare-col">
+      <h3>${escapeHtml(h.partido)}</h3>
+      <div class="compare-row"><b>Fecha guardado</b>${escapeHtml((h.savedAt||"").slice(0,16).replace("T"," "))}</div>
+      <div class="compare-row"><b>Pick</b>${escapeHtml(h.resumen && h.resumen.pick || "—")}</div>
+      <div class="compare-row"><b>Spread</b>${escapeHtml(h.resumen && h.resumen.spread || "—")}</div>
+      <div class="compare-row"><b>Total</b>${escapeHtml(h.resumen && h.resumen.total || "—")}</div>
+      <div class="compare-row"><b>Confianza spread</b>${escapeHtml(h.resumen && h.resumen.confianza_spread || "—")}</div>
+      <div class="compare-row"><b>Confianza total</b>${escapeHtml(h.resumen && h.resumen.confianza_total || "—")}</div>
+      <div class="compare-row"><b>Resultado</b>${h.resultado === "acierto" ? "✓ Acertó" : h.resultado === "fallo" ? "✗ Falló" : "Sin marcar"}</div>
+    </div>
+  `;
+  out.innerHTML = `<div class="compare-grid">${col(a)}${col(b)}</div>`;
+}
+
+/* ---------- AUTO-VERIFY RESULTS ---------- */
+async function fetchResult(entry){
+  const systemPrompt = `Busca el resultado final del partido: ${entry.partido}, jugado alrededor de ${entry.fecha}. El pick guardado fue "${entry.resumen && entry.resumen.pick}" (spread ${entry.resumen && entry.resumen.spread}, total ${entry.resumen && entry.resumen.total}). Determina si ese pick acertó. Si el partido todavía no se ha jugado, di "pendiente". Responde ÚNICAMENTE JSON:
+{"resultado":"acierto, fallo o pendiente","marcador_final":"ej. 28-23","nota":"máx 10 palabras"}`;
+  return await callClaudeJSON(systemPrompt, "Verifica el resultado.", 400);
+}
+async function verifyPendingResults(manual){
+  const now = Date.now();
+  const threshold = manual ? 0 : 20*60*60*1000;
+  const eligible = history.filter(h => !h.resultado && h.savedAt && (now - new Date(h.savedAt).getTime() > threshold));
+  if(eligible.length === 0){
+    if(manual){ const tag = $(".accuracy-tag"); if(tag) tag.textContent = "No hay resultados pendientes por verificar."; }
+    return;
+  }
+  const verifyBtn = $("#verify-btn");
+  if(verifyBtn){ verifyBtn.textContent = "Verificando…"; verifyBtn.disabled = true; }
+  for(const entry of eligible.slice(0,3)){
+    try{
+      const result = await fetchResult(entry);
+      if(result && result.resultado && result.resultado !== "pendiente"){
+        entry.resultado = result.resultado;
+        entry.marcador_final = result.marcador_final || null;
+        entry.nota_resultado = result.nota || null;
+      }
+    }catch(e){}
+  }
+  await saveHistory();
+  renderHistorySection();
+}
+
+/* ---------- ANALYZE ---------- */
+async function analyze(matchup){
+  const systemPrompt = `Eres un analista deportivo senior de fútbol americano (NFL y NCAA), con el mismo nivel de rigor que los mejores analistas de Covers, Action Network o ESPN. Investiga el partido con búsqueda web en tiempo real y ve MÁS ALLÁ de las estadísticas básicas:
+
+- Busca métricas avanzadas si existen: SP+, FPI, EPA por jugada, DVOA
+- Busca movimiento de línea y números clave (el 3 y el 7 son especialmente importantes)
+- Busca clima previsto (viento, lluvia, temperatura) si el partido es al aire libre
+- Busca lesiones a nivel de JUGADOR CLAVE específico, no solo generalidades
+- Busca picks de 2-3 analistas con nombre propio y compáralos; menciona brevemente qué tan confiable es cada fuente
+- Considera trampas situacionales: letdown spot, revenge game, exceso de confianza
+- Sé tu propio crítico: da el mejor argumento EN CONTRA de tu pick antes de concluir
+
+Estructura tu análisis siguiendo EXACTAMENTE estos 9 pasos, en este orden, con estos títulos:
+1. Línea de mercado
+2. Partido más reciente
+3. Matchups específicos
+4. Estadísticas de temporada
+5. Contexto, clima y lesiones
+6. Lo que dicen los analistas
+7. Proyección propia
+8. Contraargumento
+9. Conclusión y valor
+
+Responde ÚNICAMENTE con un objeto JSON válido, sin texto antes ni después, sin bloques de markdown, con esta forma exacta:
+{"partido":"Equipo A vs Equipo B","fecha":"fecha y hora del partido","titular":"la idea central del análisis en una sola frase, máximo 10 palabras","resumen":{"favorito":"...","spread":"...","total":"...","pick":"el pick completo, incluyendo spread Y total si recomiendas ambos, ej. 'SMU -3 y Under 53.5'","confianza_spread":"Alta, Media o Baja","confianza_total":"Alta, Media o Baja","clima":"breve o vacío si es techo cerrado"},"pasos":[{"titulo":"Línea de mercado","contenido":"..."},{"titulo":"Partido más reciente","contenido":"..."},{"titulo":"Matchups específicos","contenido":"..."},{"titulo":"Estadísticas de temporada","contenido":"..."},{"titulo":"Contexto, clima y lesiones","contenido":"..."},{"titulo":"Lo que dicen los analistas","contenido":"..."},{"titulo":"Proyección propia","contenido":"..."},{"titulo":"Contraargumento","contenido":"..."},{"titulo":"Conclusión y valor","contenido":"..."}],"fuentes":["url1","url2","url3"]}
+
+MUY IMPORTANTE: si tu conclusión recomienda tanto el spread como el total (o solo uno de los dos), el campo "pick" debe reflejar EXACTAMENTE lo mismo que dices en el paso "Conclusión y valor" — nunca solo una parte. El espacio de respuesta es limitado: cada "contenido" debe tener como máximo UNA frase corta (12-16 palabras). No más de 3 fuentes. Sé lo más breve posible sin perder lo esencial. Todo el texto en español.`;
+
+  return await callClaudeJSON(systemPrompt, `Analiza este partido: ${matchup}`, 1000);
+}
+
+async function handleAnalyze(){
+  const a = teamAInput.value.trim();
+  const b = teamBInput.value.trim();
+  if(!a && !b){ teamAInput.focus(); return; }
+  const matchup = a && b ? `${a} vs ${b}` : (a || b);
+  btn.disabled = true;
+  renderLoading();
+  try{
+    const data = await analyze(matchup);
+    renderResult(data, {saved:false});
+  }catch(err){
+    renderError(err.message || "Intenta de nuevo en unos segundos.");
+  }finally{
+    btn.disabled = false;
+  }
+}
+
+btn.addEventListener("click", handleAnalyze);
+teamAInput.addEventListener("keydown", (e) => { if(e.key === "Enter") handleAnalyze(); });
+teamBInput.addEventListener("keydown", (e) => { if(e.key === "Enter") handleAnalyze(); });
+
+(async function init(){
+  populateTeamList();
+  await initTheme();
+  await loadFavorites();
+  await loadHistory();
+  renderHistorySection();
+  verifyPendingResults(false);
+})();
+</script>
+
+</body>
+</html>
